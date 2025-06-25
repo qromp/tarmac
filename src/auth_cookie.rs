@@ -14,16 +14,17 @@ pub fn get_auth_cookie() -> Option<SecretString> {
 }
 
 pub fn get_csrf_token(roblosecurity_cookie: &SecretString) -> Result<HeaderValue, RobloxApiError> {
+    let cookie_header = format!(".ROBLOSECURITY={}", roblosecurity_cookie.expose_secret());
+
     let response = Client::new()
         .post("https://auth.roblox.com")
-        .header(header::COOKIE, roblosecurity_cookie.expose_secret())
+        .header(header::COOKIE, cookie_header)
         .header(header::CONTENT_LENGTH, 0)
-        .send();
+        .send()?;
 
     response
-        .unwrap()
         .headers()
         .get("X-CSRF-Token")
-        .map(|v| v.to_owned())
+        .cloned()
         .ok_or(RobloxApiError::MissingCsrfToken)
 }
